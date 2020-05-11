@@ -1,6 +1,8 @@
 package pers.interest.util;
 
-import com.lowagie.text.pdf.codec.Base64;
+import lombok.SneakyThrows;
+
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -17,20 +19,23 @@ public class RSAUtils {
     private final static String ENCRYPTION_ALGORITHM = "RSA";
     private final static String SIGN_ALGORITHM = "SHA256withRSA";
 
-    public static PublicKey getPubKey(String pubKeyEncode) throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+    @SneakyThrows
+    public static PublicKey getPubKey(String pubKeyEncode) {
         String pk = pubKeyEncode.replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("\n", "")
                 .replace("-----END PUBLIC KEY-----", "");
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decode(pk));
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pk));
         KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
         return keyFactory.generatePublic(keySpec);
     }
 
-    public static PrivateKey getPriKey(String priKeyEncode) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    @SneakyThrows
+    public static PrivateKey getPriKey(String priKeyEncode) {
         String pk = priKeyEncode.replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("\n", "");
-        KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decode(pk));
+        KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pk));
         KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
         return keyFactory.generatePrivate(keySpec);
     }
@@ -38,43 +43,45 @@ public class RSAUtils {
     /**
      * 加密（可选择公钥加密或私钥加密）
      */
-    public static String encrypt(String plaintext, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
+    @SneakyThrows
+    public static String encrypt(String plaintext, Key key) {
         byte[] plaintextEncode = plaintext.getBytes("UTF-8");
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        String ciphertext = Base64.encodeBytes(cipher.doFinal(plaintextEncode));
-        return ciphertext;
+        return Base64.getEncoder().encodeToString(cipher.doFinal(plaintextEncode));
     }
 
     /**
      * 解密（可选择公钥解密或私钥解密）
      */
-    public static String decrypt(String ciphertext, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    @SneakyThrows
+    public static String decrypt(String ciphertext, Key key) {
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key);
-        String plaintext = new String(cipher.doFinal(Base64.decode(ciphertext)));
-        return plaintext;
+        return new String(cipher.doFinal(Base64.getDecoder().decode(ciphertext)));
     }
 
     /**
      * 私钥签名
      */
-    public static String sign(String text, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+    @lombok.SneakyThrows
+    public static String sign(String text, PrivateKey privateKey) {
         byte[] data = text.getBytes("UTF-8");
         /* 使用私钥生成签名 */
         Signature signature = Signature.getInstance(SIGN_ALGORITHM);
         signature.initSign(privateKey);
         signature.update(data);
         byte[] sign = signature.sign();
-        return Base64.encodeBytes(sign);
+        return Base64.getUrlEncoder().encodeToString(sign);
     }
 
     /**
      * 公钥验签
      */
-    public static boolean verify(String text, String signEncode,PublicKey publicKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+    @lombok.SneakyThrows
+    public static boolean verify(String text, String signEncode, PublicKey publicKey) {
         byte[] data = text.getBytes("UTF-8");
-        byte[] sign = Base64.decode(signEncode);
+        byte[] sign = Base64.getUrlDecoder().decode(signEncode);
         Signature signature = Signature.getInstance(SIGN_ALGORITHM);
         signature.initVerify(publicKey);
         signature.update(data);
@@ -121,17 +128,17 @@ public class RSAUtils {
                 "gwIDAQAB\n" +
                 "-----END PUBLIC KEY-----\n";
 
-        try {
-            PrivateKey priKey = getPriKey(privateKeyEncode);
-            PublicKey pubKey = getPubKey(publicKeyEncode);
-            String c = encrypt(text,priKey);
-            System.out.println("密文 = " + c);
-            String p = decrypt(c,pubKey);
-            System.out.println("明文 = " + p);
 
-            String s = sign(text,priKey);
-            System.out.println("签名 = " + s);
-            System.out.println("验证签名 = " + verify(text,s,pubKey));
+        PrivateKey priKey = getPriKey(privateKeyEncode);
+        PublicKey pubKey = getPubKey(publicKeyEncode);
+        String c = encrypt(text, priKey);
+        System.out.println("密文 = " + c);
+        String p = decrypt(c, pubKey);
+        System.out.println("明文 = " + p);
+
+        String s = sign(text, priKey);
+        System.out.println("签名 = " + s);
+        System.out.println("验证签名 = " + verify(text, s, pubKey));
 //            byte[] textEncode = text.getBytes("UTF-8");
 //            PublicKey pubKey = getPubKey(publicKeyEncode);
 //            PrivateKey priKey = getPriKey(privateKeyEncode);
@@ -144,20 +151,6 @@ public class RSAUtils {
 //            cipher.init(Cipher.DECRYPT_MODE, pubKey);
 //            String txt = new String(cipher.doFinal(Base64.decode(ciphertext)));
 //            System.out.println("txt = " + txt);
-
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        }
 
     }
 }

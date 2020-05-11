@@ -19,6 +19,7 @@
     <vertx.version>4.0.0-milestone4</vertx.version>
     <jsoup.version>1.13.1</jsoup.version>
     <logback.version>1.2.3</logback.version>
+    <tess4j.version>4.4.1</tess4j.version>
     <junit-jupiter.version>5.4.0</junit-jupiter.version>
     <junit-platform.version>5.0.0</junit-platform.version>
 
@@ -93,6 +94,11 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit-jupiter.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.10</version>
     </dependency>
   </dependencies>
 
