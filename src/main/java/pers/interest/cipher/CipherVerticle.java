@@ -35,8 +35,8 @@ public class CipherVerticle extends AbstractVerticle {
         future.onSuccess(result -> {
             String priKeyEncode = result.getString("private_key");
             String pubKeyEncode = result.getString("public_key");
-            PrivateKey privateKey = RSAUtils.getPriKey(pubKeyEncode);
-            PublicKey publicKey = RSAUtils.getPubKey(priKeyEncode);
+            PrivateKey privateKey = RSAUtils.getPriKey(priKeyEncode);
+            PublicKey publicKey = RSAUtils.getPubKey(pubKeyEncode);
 
             Router router = Router.router(vertx);
             router.get("/rsa/encrypt").handler(context -> {
@@ -49,7 +49,6 @@ public class CipherVerticle extends AbstractVerticle {
                 context.response().end(RSAUtils.decrypt(plaintext, publicKey));
             });
             vertx.createHttpServer().requestHandler(router).listen(8888);
-
         }).onFailure(Throwable::printStackTrace);
     }
 

@@ -4,17 +4,18 @@ import lombok.SneakyThrows;
 
 import java.util.Base64;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.UnsupportedEncodingException;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+/**
+ * RSA实现加密解密和签名
+ * 统一使用base64url进行编码
+ * @author Amadeus
+ */
 public class RSAUtils {
     private final static String ENCRYPTION_ALGORITHM = "RSA";
     private final static String SIGN_ALGORITHM = "SHA256withRSA";
@@ -26,7 +27,9 @@ public class RSAUtils {
                 .replace("\n", "")
                 .replace("-----END PUBLIC KEY-----", "");
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pk));
-        KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
+        KeyFactory keyFactory = null;
+
+        keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
         return keyFactory.generatePublic(keySpec);
     }
 
@@ -36,7 +39,8 @@ public class RSAUtils {
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("\n", "");
         KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pk));
-        KeyFactory keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
+        KeyFactory keyFactory = null;
+        keyFactory = KeyFactory.getInstance(ENCRYPTION_ALGORITHM);
         return keyFactory.generatePrivate(keySpec);
     }
 
@@ -48,7 +52,7 @@ public class RSAUtils {
         byte[] plaintextEncode = plaintext.getBytes("UTF-8");
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        return Base64.getEncoder().encodeToString(cipher.doFinal(plaintextEncode));
+        return Base64.getUrlEncoder().encodeToString(cipher.doFinal(plaintextEncode));
     }
 
     /**
@@ -58,13 +62,13 @@ public class RSAUtils {
     public static String decrypt(String ciphertext, Key key) {
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key);
-        return new String(cipher.doFinal(Base64.getDecoder().decode(ciphertext)));
+        return new String(cipher.doFinal(Base64.getUrlDecoder().decode(ciphertext)));
     }
 
     /**
      * 私钥签名
      */
-    @lombok.SneakyThrows
+    @SneakyThrows
     public static String sign(String text, PrivateKey privateKey) {
         byte[] data = text.getBytes("UTF-8");
         /* 使用私钥生成签名 */
@@ -78,7 +82,7 @@ public class RSAUtils {
     /**
      * 公钥验签
      */
-    @lombok.SneakyThrows
+    @SneakyThrows
     public static boolean verify(String text, String signEncode, PublicKey publicKey) {
         byte[] data = text.getBytes("UTF-8");
         byte[] sign = Base64.getUrlDecoder().decode(signEncode);
@@ -128,7 +132,6 @@ public class RSAUtils {
                 "gwIDAQAB\n" +
                 "-----END PUBLIC KEY-----\n";
 
-
         PrivateKey priKey = getPriKey(privateKeyEncode);
         PublicKey pubKey = getPubKey(publicKeyEncode);
         String c = encrypt(text, priKey);
@@ -139,18 +142,5 @@ public class RSAUtils {
         String s = sign(text, priKey);
         System.out.println("签名 = " + s);
         System.out.println("验证签名 = " + verify(text, s, pubKey));
-//            byte[] textEncode = text.getBytes("UTF-8");
-//            PublicKey pubKey = getPubKey(publicKeyEncode);
-//            PrivateKey priKey = getPriKey(privateKeyEncode);
-//            //RSA公钥加密
-//            Cipher cipher = Cipher.getInstance("RSA");
-//            cipher.init(Cipher.ENCRYPT_MODE, priKey);
-//            String ciphertext = Base64.encodeBytes(cipher.doFinal(textEncode));
-//            System.out.println("ciphertext = " + ciphertext);
-//            //RSA私钥解密
-//            cipher.init(Cipher.DECRYPT_MODE, pubKey);
-//            String txt = new String(cipher.doFinal(Base64.decode(ciphertext)));
-//            System.out.println("txt = " + txt);
-
     }
 }
